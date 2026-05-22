@@ -1,1088 +1,518 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Vancomycin AUC PK Calculator</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-  :root {
-    --bg:        #f0f4f8;
-    --surface:   #ffffff;
-    --border:    #dce4ef;
-    --primary:   #2c3e50;
-    --accent:    #3b82f6;
-    --accent2:   #60a5fa;
-    --text:      #1e293b;
-    --muted:     #64748b;
-    --success:   #10b981;
-    --warning:   #f59e0b;
-    --danger:    #ef4444;
-    --radius:    12px;
-    --shadow:    0 2px 16px rgba(59,130,246,0.08);
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Type of ID Pharmacist Are You?</title>
+    <style>
+        /* CSS Custom Properties for our Clinical/Playful Theme */
+        :root {
+            --primary-blue: #0B3C5D;
+            --secondary-blue: #328CC1;
+            --teal-accent: #008080;
+            --teal-hover: #006666;
+            --crimson-alert: #D9534F;
+            --sterile-white: #FFFFFF;
+            --bg-color: #F4F7F6;
+            --text-main: #333333;
+            --text-light: #666666;
+            --border-color: #E0E0E0;
+        }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        /* Global Reset & Typography */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 0 0 60px;
-  }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
 
-  header {
-    background: var(--primary);
-    color: #fff;
-    padding: 28px 40px 24px;
-    border-bottom: 3px solid var(--accent2);
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-  }
-  header h1 {
-    font-family: 'Libre Baskerville', serif;
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-  header span.sub {
-    font-size: 0.8rem;
-    font-family: 'DM Mono', monospace;
-    color: var(--accent2);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
+        /* App Container Layout */
+        .app-container {
+            background: var(--sterile-white);
+            max-width: 650px;
+            width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(11, 60, 93, 0.15);
+            overflow: hidden;
+            position: relative;
+        }
 
-  .tab-bar {
-    background: var(--primary);
-    display: flex;
-    gap: 4px;
-    padding: 0 40px;
-  }
-  .tab-btn {
-    padding: 10px 22px;
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.55);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.88rem;
-    font-weight: 500;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: color .2s, border-color .2s;
-    letter-spacing: 0.03em;
-  }
-  .tab-btn.active { color: #fff; border-bottom-color: var(--accent2); }
-  .tab-btn:hover:not(.active) { color: rgba(255,255,255,.8); }
+        /* Header & Progress Bar */
+        header {
+            background: var(--primary-blue);
+            color: var(--sterile-white);
+            padding: 24px;
+            text-align: center;
+            position: relative;
+        }
 
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
 
-  .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px 0; }
-  .grid-2 { display: grid; grid-template-columns: 360px 1fr; gap: 24px; }
+        .progress-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
 
-  @media (max-width: 800px) {
-    .grid-2 { grid-template-columns: 1fr; }
-    header { padding: 20px 20px 16px; }
-    .tab-bar { padding: 0 20px; }
-    .container { padding: 20px 14px 0; }
-  }
+        .progress-bar {
+            height: 100%;
+            background: var(--teal-accent);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
 
-  .card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    padding: 24px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow);
-  }
-  .card h3 {
-    font-family: 'Libre Baskerville', serif;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 18px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .card h3 .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent2);
-    flex-shrink: 0;
-  }
+        /* Content Area */
+        .content {
+            padding: 30px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
 
-  .form-group { margin-bottom: 14px; }
-  label {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 5px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-  input[type="number"], input[type="date"], input[type="time"], select {
-    width: 100%;
-    padding: 9px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    color: var(--text);
-    background: #fafbfd;
-    transition: border-color .2s, box-shadow .2s;
-    outline: none;
-  }
-  input:focus, select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-    background: #fff;
-  }
-  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        /* Question Styles */
+        .question-number {
+            color: var(--secondary-blue);
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: block;
+        }
 
-  .radio-group {
-    display: flex;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 16px;
-  }
-  .radio-group label {
-    flex: 1;
-    margin: 0;
-    padding: 8px 6px;
-    text-align: center;
-    cursor: pointer;
-    font-size: 0.73rem;
-    font-weight: 600;
-    color: var(--muted);
-    background: #fafbfd;
-    border: none;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    transition: background .15s, color .15s;
-    line-height: 1.3;
-  }
-  .radio-group input[type="radio"] { display: none; }
-  .radio-group input[type="radio"]:checked + label { background: var(--accent); color: #fff; }
+        .question-text {
+            font-size: 1.3rem;
+            color: var(--primary-blue);
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
 
-  .btn {
-    width: 100%;
-    padding: 11px;
-    border: none;
-    border-radius: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 0.02em;
-    transition: transform .1s, box-shadow .15s, background .15s;
-  }
-  .btn:active { transform: scale(0.98); }
-  .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.25); }
-  .btn-primary:hover { background: #2563eb; box-shadow: 0 4px 14px rgba(59,130,246,0.35); }
-  .btn-success { background: var(--success); color: #fff; box-shadow: 0 2px 8px rgba(16,185,129,0.2); margin-top: 8px; }
-  .btn-success:hover { background: #059669; }
+        /* Options/Buttons */
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-  .results-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 4px;
-  }
-  .result-item {
-    background: #f6f9fc;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
-  }
-  .result-item .r-label { font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-  .result-item .r-value { font-family: 'DM Mono', monospace; font-size: 1.15rem; font-weight: 500; color: var(--primary); }
-  .result-item .r-unit { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
-  
-  /* Status Highlights */
-  .result-item.highlight { border-color: var(--accent2); background: #eff6ff; }
-  .result-item.highlight .r-value { color: var(--accent); }
-  .result-item.therapeutic { border-color: var(--success); background: #ecfdf5; }
-  .result-item.therapeutic .r-value { color: var(--success); }
-  .result-item.warning { border-color: var(--danger); background: #fef2f2; }
-  .result-item.warning .r-value { color: var(--danger); }
-  .result-item.sub { border-color: var(--warning); background: #fffbeb; }
-  .result-item.sub .r-value { color: #d97706; }
+        .option-btn {
+            background: var(--sterile-white);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px 20px;
+            font-size: 1rem;
+            color: var(--text-main);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
 
-  .status-badge {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    margin-left: 8px;
-    vertical-align: middle;
-  }
-  .status-badge.tx { background: var(--success); color: white; }
-  .status-badge.sub { background: var(--warning); color: white; }
-  .status-badge.supra { background: var(--danger); color: white; }
+        .option-btn:hover {
+            border-color: var(--secondary-blue);
+            background: #F9FCFF;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(50, 140, 193, 0.1);
+        }
 
-  .results-empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 32px 0; font-style: italic; }
+        .option-btn:active {
+            transform: translateY(0);
+        }
 
-  .chart-wrap { position: relative; height: 320px; }
+        /* Result View Styles */
+        .result-view {
+            text-align: center;
+            animation: fadeIn 0.6s ease;
+        }
 
-  #toast {
-    position: fixed;
-    bottom: 28px; right: 28px;
-    background: var(--primary);
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-size: 0.84rem;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.22);
-    opacity: 0;
-    transform: translateY(12px);
-    transition: opacity .3s, transform .3s;
-    pointer-events: none;
-    max-width: 340px;
-    z-index: 9999;
-  }
-  #toast.show { opacity: 1; transform: translateY(0); }
+        .result-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            display: inline-block;
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
 
-  .conditional { display: none; }
-  .conditional.visible { display: block; }
+        .result-title {
+            font-size: 1.8rem;
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+        }
 
-  /* ── Equations panel ─────────────────────────────── */
-  .eq-toggle-wrap { margin-bottom: 18px; }
+        .result-desc {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-bottom: 30px;
+            padding: 0 10px;
+        }
 
-  .eq-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 18px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.83rem;
-    font-weight: 600;
-    color: var(--accent);
-    cursor: pointer;
-    letter-spacing: 0.03em;
-    transition: background .15s, border-color .15s;
-    box-shadow: var(--shadow);
-  }
-  .eq-toggle-btn:hover { background: #eff6ff; border-color: var(--accent2); }
-  .eq-toggle-btn .arrow { font-size: 0.65rem; transition: transform .25s; display: inline-block; }
-  .eq-toggle-btn.open .arrow { transform: rotate(180deg); }
+        .restart-btn {
+            background: var(--teal-accent);
+            color: var(--sterile-white);
+            border: none;
+            padding: 14px 30px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 128, 128, 0.3);
+        }
 
-  .eq-panel {
-    display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 26px 28px 22px;
-    margin-top: 12px;
-  }
-  .eq-panel.open { display: block; }
+        .restart-btn:hover {
+            background: var(--teal-hover);
+        }
 
-  .eq-section-title {
-    font-family: 'Libre Baskerville', serif;
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--primary);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin: 20px 0 12px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
-  }
-  .eq-section-title:first-child { margin-top: 0; }
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-  .eq-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-    gap: 10px;
-  }
+        @keyframes bounceIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
 
-  .eq-item {
-    background: #f6f9fc;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 13px 15px;
-  }
-  .eq-item .eq-name {
-    font-size: 0.69rem;
-    font-weight: 700;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    margin-bottom: 9px;
-  }
-  .eq-item .eq-body {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.85rem;
-    color: var(--primary);
-    line-height: 2;
-  }
-  .frac {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    vertical-align: middle;
-    margin: 0 2px;
-    line-height: 1.25;
-    font-size: 0.8rem;
-  }
-  .frac .num { border-bottom: 1.5px solid var(--primary); padding: 0 3px 1px; }
-  .frac .den { padding: 1px 3px 0; }
-  .eq-item .eq-note {
-    font-size: 0.69rem;
-    color: var(--muted);
-    margin-top: 7px;
-    line-height: 1.55;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  footer {
-    margin-top: 48px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 0.77rem;
-    padding: 0 20px;
-    line-height: 1.7;
-  }
-
-  /* --- Clinical Note Snippet Styles --- */
-  .snippet-container {
-    margin-top: 16px;
-    background: #f8fafc;
-    border: 1px dashed var(--muted);
-    border-radius: 8px;
-    padding: 12px;
-  }
-  .snippet-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-  .snippet-header label {
-    margin-bottom: 0;
-  }
-  .copy-btn {
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 600;
-  }
-  .copy-btn:hover { background: var(--primary); }
-  .snippet-text {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    color: var(--primary);
-    white-space: pre-wrap;
-    line-height: 1.5;
-    background: white;
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #e2e8f0;
-  }
-</style>
+        /* Utility classes for state switching */
+        .hidden {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <h1>Vancomycin AUC Calculator</h1>
-    <span class="sub">First-Order Pharmacokinetic & Optimization Tool</span>
-  </div>
-</header>
-
-<div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('pk', this)">2-Level PK Calculator</button>
-  <button class="tab-btn" onclick="switchTab('opt', this)">Dose Optimization</button>
-</div>
-
-<div id="tab-pk" class="tab-panel active">
-<div class="container">
-
-  <div class="eq-toggle-wrap">
-    <button class="eq-toggle-btn" id="eq-btn-pk" onclick="toggleEq('pk')">
-      <span id="eq-btn-pk-label">Show Vancomycin PK Equations</span>
-      <span class="arrow">▼</span>
-    </button>
-    <div class="eq-panel" id="eq-panel-pk">
-
-      <div class="eq-section-title">Vancomycin & Renal Equations</div>
-      <div class="eq-grid">
-        <div class="eq-item">
-          <div class="eq-name">Cockcroft-Gault CrCl</div>
-          <div class="eq-body">
-            CrCl =
-            <span class="frac"><span class="num">(140 - Age) · Wt</span><span class="den">72 · SCr</span></span>
-            · (0.85 if Female)
-          </div>
-        </div>
-        <div class="eq-item">
-          <div class="eq-name">Ideal Body Weight (IBW)</div>
-          <div class="eq-body">Male: 50 + 2.3(Ht in >60)</div>
-          <div class="eq-body">Fem: 45.5 + 2.3(Ht in >60)</div>
-        </div>
-        <div class="eq-item">
-          <div class="eq-name">Elimination Rate Constant (k<sub>e</sub>)</div>
-          <div class="eq-body">
-            k<sub>e</sub> =
-            <span class="frac"><span class="num">ln(C₁ / C₂)</span><span class="den">t₂ − t₁</span></span>
-          </div>
-          <div class="eq-note">Steady state assumed.</div>
-        </div>
-        <div class="eq-item">
-          <div class="eq-name">Extrapolated Peak (C<sub>max</sub>)</div>
-          <div class="eq-body">
-            C<sub>max</sub> =
-            <span class="frac"><span class="num">C₁</span><span class="den">e<sup>−k<sub>e</sub>(t₁ − t′)</sup></span></span>
-          </div>
-          <div class="eq-note">t′ = infusion duration (hr)</div>
-        </div>
-        <div class="eq-item">
-          <div class="eq-name">Volume of Distribution (V<sub>d</sub>)</div>
-          <div class="eq-body">
-            V<sub>d</sub> =
-            <span class="frac">
-              <span class="num">(Dose/t′) · (1 − e<sup>−k<sub>e</sub>t′</sup>)</span>
-              <span class="den">C<sub>max</sub> · k<sub>e</sub> · (1 − e<sup>−k<sub>e</sub>τ</sup>)</span>
-            </span>
-          </div>
-        </div>
-        <div class="eq-item">
-          <div class="eq-name">AUC₂₄ (Steady State)</div>
-          <div class="eq-body">
-            AUC<sub>24</sub> =
-            <span class="frac"><span class="num">Dose</span><span class="den">k<sub>e</sub> · V<sub>d</sub></span></span>
-            ·
-            <span class="frac"><span class="num">24</span><span class="den">τ</span></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="grid-2">
-
-    <div>
-      
-      <div class="card" style="padding-bottom: 12px;">
-        <h3><span class="dot"></span>Patient Profile</h3>
-        <div class="row-3">
-          <div class="form-group">
-            <label>Age</label>
-            <input type="number" id="age" value="55" min="18" />
-          </div>
-          <div class="form-group">
-            <label>Sex</label>
-            <select id="sex">
-              <option value="M">Male</option>
-              <option value="F">Female</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>SCr (mg/dL)</label>
-            <input type="number" id="scr" value="1.0" step="0.1" min="0.1"/>
-          </div>
-        </div>
-        <div class="row-2">
-          <div class="form-group">
-            <label>Height (in)</label>
-            <input type="number" id="ht" value="70" />
-          </div>
-          <div class="form-group">
-            <label>Actual Wt (kg)</label>
-            <input type="number" id="wt" value="80" step="0.1"/>
-          </div>
-        </div>
-        <div class="row-2">
-          <div class="form-group">
-            <label>Pathogen MIC (mg/L)</label>
-            <input type="number" id="mic" value="1" step="0.5" min="0.5"/>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3><span class="dot"></span>Regimen & Levels</h3>
-
-        <div class="radio-group">
-          <input type="radio" id="m-ct" name="method" value="ct" checked onchange="toggleMethod()">
-          <label for="m-ct">Concentrations &amp; Times</label>
-          <input type="radio" id="m-dt" name="method" value="dt" onchange="toggleMethod()">
-          <label for="m-dt">Date / Time / Dose</label>
-        </div>
-
-        <div id="section-ct" class="conditional visible">
-          <div class="row-2">
-            <div class="form-group">
-              <label>C₁ — Peak/Level 1 (mg/L)</label>
-              <input type="number" id="c1" value="35" min="0" step="0.1" />
+    <div class="app-container">
+        <header>
+            <h1>What Type of ID Pharmacist Are You?</h1>
+            <div id="progress-container" class="progress-container">
+                <div id="progress-bar" class="progress-bar"></div>
             </div>
-            <div class="form-group">
-              <label>C₂ — Trough/Level 2 (mg/L)</label>
-              <input type="number" id="c2" value="12" min="0" step="0.1" />
+        </header>
+
+        <main class="content">
+            <!-- Question View -->
+            <div id="question-view">
+                <span id="question-number" class="question-number">Question 1 of 9</span>
+                <h2 id="question-text" class="question-text">Question goes here</h2>
+                <div id="options-container" class="options-grid">
+                    <!-- Option buttons will be injected here via JavaScript -->
+                </div>
             </div>
-          </div>
-          <div class="row-2">
-            <div class="form-group">
-              <label>t₁ — Time of C₁ (hr post-start)</label>
-              <input type="number" id="t1" value="2.5" min="0" step="0.1" />
+
+            <!-- Result View -->
+            <div id="result-view" class="result-view hidden">
+                <div id="result-icon" class="result-icon">🦠</div>
+                <h2 id="result-title" class="result-title">Your Profile</h2>
+                <p id="result-desc" class="result-desc">Profile description goes here.</p>
+                <button id="restart-btn" class="restart-btn">Play Again</button>
             </div>
-            <div class="form-group">
-              <label>t₂ — Time of C₂ (hr post-start)</label>
-              <input type="number" id="t2" value="11.5" min="0" step="0.1" />
-            </div>
-          </div>
-        </div>
-
-        <div id="section-dt" class="conditional">
-          <div class="row-2">
-            <div class="form-group"><label>Dose Date</label><input type="date" id="dose_date" /></div>
-            <div class="form-group"><label>Dose Time</label><input type="time" id="dose_time" value="08:00" /></div>
-          </div>
-          <div class="row-2">
-            <div class="form-group"><label>Date of C₁</label><input type="date" id="date1" /></div>
-            <div class="form-group"><label>Time of C₁</label><input type="time" id="time1" value="10:30" /></div>
-          </div>
-          <div class="form-group">
-            <label>C₁ Concentration (mg/L)</label>
-            <input type="number" id="c1_date" value="35" min="0" step="0.1" />
-          </div>
-          <div class="row-2">
-            <div class="form-group"><label>Date of C₂</label><input type="date" id="date2" /></div>
-            <div class="form-group"><label>Time of C₂</label><input type="time" id="time2" value="19:30" /></div>
-          </div>
-          <div class="form-group">
-            <label>C₂ Concentration (mg/L)</label>
-            <input type="number" id="c2_date" value="12" min="0" step="0.1" />
-          </div>
-        </div>
-
-        <div class="row-2">
-          <div class="form-group">
-            <label>Total Dose (mg)</label>
-            <input type="number" id="dose" value="1500" min="250" step="250" onchange="autoSuggestInfusion('dose', 't_inf')" />
-          </div>
-          <div class="form-group">
-            <label>Dosing Interval τ (hr)</label>
-            <input type="number" id="tau" value="12" min="8" step="4" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Infusion Duration t' (hr)</label>
-          <input type="number" id="t_inf" value="1.5" min="0.5" step="0.25" />
-        </div>
-
-        <button class="btn btn-primary" onclick="calculatePK()">Calculate PK Parameters</button>
-        <button class="btn btn-success" onclick="useInOptimization()">Use Results in Optimization →</button>
-      </div>
+        </main>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:20px;">
-      <div class="card">
-        <h3><span class="dot"></span>Patient PK & Clinical Status</h3>
-        <div id="pk-results"><p class="results-empty">Enter values and click Calculate to see results.</p></div>
-      </div>
-      <div class="card">
-        <h3><span class="dot"></span>Concentration–Time Curve</h3>
-        <div class="chart-wrap"><canvas id="pkChart"></canvas></div>
-      </div>
-    </div>
+    <script>
+        /** 
+         * Application Data
+         * 12 distinct ID Pharmacy profiles, as requested.
+         */
+        const profiles = {
+            stewardship: {
+                title: "The Stewardship Warden",
+                icon: "🛡️",
+                desc: "Strict on the formulary, you live for restrictive criteria. You can spot an inappropriate daptomycin order from a mile away, and you single-handedly fight the linezolid pipeline to protect it for when it's truly needed."
+            },
+            pkpd: {
+                title: "The PK/PD Wizard",
+                icon: "🧮",
+                desc: "Deep in the math. You calculate continuous infusion beta-lactams in your sleep. You see the world entirely in troughs, clearance equations, and AUC/MIC ratios."
+            },
+            culture: {
+                title: "The Culture Whisperer",
+                icon: "🧫",
+                desc: "You hang out in the micro lab. You decipher ambiguous Gram stains like ancient runes and know exactly what a 'Gram-variable rod' actually means hours before the PCR runs."
+            },
+            opat: {
+                title: "The Outpatient Outlaw (OPAT Champion)",
+                icon: "🏡",
+                desc: "The logistics mastermind. You coordinate PICC lines, lab monitoring, home health, and insurance approvals with surgical precision to get patients out of the hospital safely."
+            },
+            academic: {
+                title: "The Academic Academic (The Mentor)",
+                icon: "📚",
+                desc: "You live for the data. Keeping a stack of primary literature handy to disprove a resident's choice of therapy, your natural habitat is teaching rounds, dropping knowledge bombs on trainees."
+            },
+            icu: {
+                title: "The ICU Nomad (Critical Care Cross-over)",
+                icon: "⚡",
+                desc: "You thrive in chaos. Splitting time between ID and the intensive care unit, you deal with crashing septic shock, salvage therapies, and the absolute limits of dosing guidelines."
+            },
+            rapid: {
+                title: "The Rapid Diagnostic Speedrunner",
+                icon: "⏱️",
+                desc: "Obsessed with the molecular panel. The second the rapid blood culture identification flag hits the chart, you've already paged the provider, changed the order, and saved 12 hours of broad-spectrum exposure."
+            },
+            hiv: {
+                title: "The HIV / PrEP Navigator",
+                icon: "🤝",
+                desc: "The master of long-term care and outpatient counseling. You know every single drug-drug interaction with ART by heart, treat adherence barriers with immense empathy, and handle prior authorizations like a seasoned pro."
+            },
+            transplant: {
+                title: "The Transplant / Immunocompromised Titan",
+                icon: "⚖️",
+                desc: "You deal with the highest stakes. You beautifully balance CMV viral loads, deep fungal infections, and complex drug levels in solid organ or bone marrow transplant recipients where everything is a tightrope walk."
+            },
+            peds: {
+                title: "The Peds Dosing Picasso",
+                icon: "🧸",
+                desc: "The champion of mg/kg and liquid formulations. You seamlessly convert massive adult regimens into palatable, weight-adjusted doses for neonates, silently judging clinicians who think a 1-gram flat dose solves everything."
+            },
+            ip: {
+                title: "The Infection Prevention Overlord",
+                icon: "🧼",
+                desc: "The macro-thinker. Obsessed with hand hygiene audits, sterile processing, outbreaks, and tracking HAIs. You don't just care about the patient; you care about the entire building's biome."
+            },
+            industry: {
+                title: "The Industry / Public Health Maverick",
+                icon: "🌍",
+                desc: "The non-traditional trail-blazer. Whether writing national guidelines, running clinical trials, or tracking regional resistance patterns at the CDC level, you look at ID through a wide-angle lens."
+            }
+        };
 
-  </div>
-</div>
-</div>
+        /**
+         * Quiz Questions & Scoring Logic
+         * Each answer allocates points to specific personality profiles.
+         */
+        const questions = [
+            {
+                text: "It’s 15:53 on a Friday and a 'rule out cellulitis' gets ordered for daptomycin. What's your move?",
+                options: [
+                    { text: "Reject immediately and suggest cefazolin. Protect the pipeline!", scores: { stewardship: 3, ip: 1 } },
+                    { text: "Call to arrange home infusion so they can leave today.", scores: { opat: 3 } },
+                    { text: "Check renal function and weight to ensure mg/kg dosing is flawless if it IS used.", scores: { pkpd: 3, peds: 2 } },
+                    { text: "Look up the local antibiogram for MRSA rates before deciding.", scores: { industry: 3, academic: 2 } }
+                ]
+            },
+            {
+                text: "A rapid molecular panel flags positive for a complex resistance gene (like NDM or KPC). How do you react?",
+                options: [
+                    { text: "Page the team immediately to switch to a targeted novel beta-lactamase inhibitor combo.", scores: { rapid: 3, icu: 2 } },
+                    { text: "Go down to the micro lab to look at the actual plate and confirm the morphology.", scores: { culture: 3 } },
+                    { text: "Immediately trigger contact isolation protocols and trace the patient's room history.", scores: { ip: 3 } },
+                    { text: "Start drafting a case report and pull the primary literature for grand rounds.", scores: { academic: 3 } }
+                ]
+            },
+            {
+                text: "A provider asks you, 'Can we just use double-dose Bactrim for this?'",
+                options: [
+                    { text: "'Only if you want massive hyperkalemia and a creatinine spike. Let me calculate the clearance.'", scores: { pkpd: 3, icu: 1 } },
+                    { text: "'Is it for PCP prophylaxis? Let's check their CD4 count and ART interactions first.'", scores: { hiv: 3, transplant: 2 } },
+                    { text: "'No, but let's look at the liquid formulation options if swallowing is an issue.'", scores: { peds: 3 } },
+                    { text: "'Absolutely not. It's restricted unless it's a verified, approved indication.'", scores: { stewardship: 3 } }
+                ]
+            },
+            {
+                text: "What is your reaction to a team wanting to start 'tailored therapy' when source control hasn't been established?",
+                options: [
+                    { text: "'Source control is the ONLY thing that matters. Wash your hands and call surgery!'", scores: { ip: 2, icu: 3 } },
+                    { text: "'I will personally hold the antimicrobial orders hostage until the abscess is drained.'", scores: { stewardship: 3 } },
+                    { text: "'Let's get the rapid diagnostics off the blood cultures while we wait for the OR.'", scores: { rapid: 3 } },
+                    { text: "'The AUC/MIC target is impossible to reach in an undrained collection anyway.'", scores: { pkpd: 3, academic: 1 } }
+                ]
+            },
+            {
+                text: "You see someone walk out of a contact isolation room without washing their hands or using gel.",
+                options: [
+                    { text: "Physically block their path until they sanitize, citing the WHO's 5 moments.", scores: { ip: 3 } },
+                    { text: "Sigh and prepare to see a hospital-acquired infection on your tracking dashboard next week.", scores: { industry: 3 } },
+                    { text: "Remind them that C. diff spores require soap and water, dropping a stat about incidence rates.", scores: { academic: 3, culture: 1 } },
+                    { text: "Ignore it because you're busy running to a code in the medical ICU.", scores: { icu: 3 } }
+                ]
+            },
+            {
+                text: "You are looking at a vancomycin trough that was drawn 4 hours early.",
+                options: [
+                    { text: "Extrapolate the true trough using first-order pharmacokinetic equations.", scores: { pkpd: 3 } },
+                    { text: "Refuse to act on it and order a new level. Discard the tainted data!", scores: { stewardship: 2, academic: 2 } },
+                    { text: "Adjust the timing to fit the patient's dialysis or ECMO schedule.", scores: { icu: 2, transplant: 3 } },
+                    { text: "Check if they can just transition to dalbavancin and go home instead.", scores: { opat: 3 } }
+                ]
+            },
+            {
+                text: "What is your absolute favorite piece of literature or data to cite?",
+                options: [
+                    { text: "The most recent IDSA guidelines, which I have committed to memory.", scores: { academic: 3, stewardship: 1 } },
+                    { text: "Real-time epidemiological data and resistance patterns from the CDC.", scores: { industry: 3, ip: 2 } },
+                    { text: "A niche paper on complex drug-drug interactions with tacrolimus or bictegravir.", scores: { transplant: 3, hiv: 3 } },
+                    { text: "A retrospective chart review on optimizing turn-around times for blood cultures.", scores: { rapid: 3, culture: 2 } }
+                ]
+            },
+            {
+                text: "A patient is admitted with a mysterious, undifferentiated fever. Where does your mind go?",
+                options: [
+                    { text: "Dive deep into their sexual history, travel history, and immune status.", scores: { hiv: 3, transplant: 2 } },
+                    { text: "Wait patiently for the blood cultures and PCR panels to do their magic.", scores: { culture: 3, rapid: 2 } },
+                    { text: "Ensure they aren't on 5 different broad-spectrum agents without a stop date.", scores: { stewardship: 3 } },
+                    { text: "Look closely at the weight-based dosing for their empiric coverage just in case.", scores: { peds: 3, icu: 1 } }
+                ]
+            },
+            {
+                text: "Finally, what is your ultimate career goal in Pharmacy?",
+                options: [
+                    { text: "Running an entire health system's stewardship and infection control program.", scores: { ip: 2, stewardship: 2, industry: 2 } },
+                    { text: "Being the absolute go-to expert for the most critically ill and complex cases.", scores: { icu: 3, transplant: 2, hiv: 1 } },
+                    { text: "Publishing practice-changing research and mentoring the next generation.", scores: { academic: 3, pkpd: 2 } },
+                    { text: "Making patient transitions seamless and preventing unnecessary hospital days.", scores: { opat: 3, peds: 2, rapid: 1 } }
+                ]
+            }
+        ];
 
-<div id="tab-opt" class="tab-panel">
-<div class="container">
+        /**
+         * State Variables
+         */
+        let currentQuestionIndex = 0;
+        let scoreTracker = {};
 
-<div class="eq-toggle-wrap">
-  <button class="eq-toggle-btn" id="eq-btn-opt" onclick="toggleEq('opt')">
-    <span id="eq-btn-opt-label">Show Optimization Equations</span>
-    <span class="arrow">▼</span>
-  </button>
-  <div class="eq-panel" id="eq-panel-opt">
-    <div class="eq-section-title">Optimization Formulas</div>
-    <div class="eq-grid">
-      <div class="eq-item">
-        <div class="eq-name">Predicted AUC₂₄</div>
-        <div class="eq-body">
-          AUC₂₄ = <span class="frac"><span class="num">Dose</span><span class="den">kₑ · Vᵈ</span></span> · <span class="frac"><span class="num">24</span><span class="den">τ</span></span>
-        </div>
-      </div>
-      <div class="eq-item">
-        <div class="eq-name">Dose from Target AUC₂₄</div>
-        <div class="eq-body">
-          Dose = AUC₂₄,ₜₐᵣ · kₑ · Vᵈ · <span class="frac"><span class="num">τ</span><span class="den">24</span></span>
-        </div>
-      </div>
-      <div class="eq-item">
-        <div class="eq-name">Dose from Target Trough</div>
-        <div class="eq-body">
-          Cₘₐₓ,ₜₐᵣ = Cₘᵢₙ,ₜₐᵣ / e⁻ᵏᵉ⁽ᵗᵃᵘ⁻ᵗ′⁾<br/>
-          Dose = <span class="frac"><span class="num">Cₘₐₓ,ₜₐᵣ · Vᵈ · kₑ · t′ · (1 - e⁻ᵏᵉᵗᵃᵘ)</span><span class="den">1 − e⁻ᵏᵉᵗ′</span></span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+        /**
+         * DOM Elements
+         */
+        const questionView = document.getElementById('question-view');
+        const resultView = document.getElementById('result-view');
+        const questionNumberEl = document.getElementById('question-number');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressContainer = document.getElementById('progress-container');
+        
+        const resultIcon = document.getElementById('result-icon');
+        const resultTitle = document.getElementById('result-title');
+        const resultDesc = document.getElementById('result-desc');
+        const restartBtn = document.getElementById('restart-btn');
 
-  <div class="grid-2">
+        /**
+         * Initialization & Reset Function
+         */
+        function initQuiz() {
+            currentQuestionIndex = 0;
+            
+            // Reset score tracker based on profile keys
+            scoreTracker = {};
+            for (let key in profiles) {
+                scoreTracker[key] = 0;
+            }
 
-    <div>
-      <div class="card">
-        <h3><span class="dot"></span>Patient Specific Parameters</h3>
-        <div class="row-2">
-          <div class="form-group">
-            <label>Ke (hr⁻¹)</label>
-            <input type="number" id="ke_opt" value="0.08" min="0" step="0.001" />
-          </div>
-          <div class="form-group">
-            <label>Vd (L)</label>
-            <input type="number" id="vd_opt" value="50" min="0" step="0.1" />
-          </div>
-        </div>
-        <div class="row-2">
-          <div class="form-group">
-            <label>New Interval τ (hr)</label>
-            <input type="number" id="interval_opt" value="12" min="8" step="4" />
-          </div>
-          <div class="form-group">
-            <label>Infusion Duration t' (hr)</label>
-            <input type="number" id="t_inf_opt" value="1.5" min="0" step="0.25" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Calculation Mode</label>
-          <select id="calc_mode" onchange="toggleCalcMode()">
-            <option value="auc">Calculate Dose from Target AUC₂₄</option>
-            <option value="trough">Calculate Dose from Target Trough</option>
-            <option value="dose">Predict Levels from Specific Dose</option>
-          </select>
-        </div>
-
-        <div id="auc-input" class="conditional visible">
-          <div class="form-group">
-            <label>Target AUC₂₄ (mg·h/L)</label>
-            <input type="number" id="target_auc" value="500" min="400" max="600" step="10" />
-            <small style="color:var(--muted); font-size: 0.7rem;">Standard target: 400 - 600</small>
-          </div>
-        </div>
-        <div id="trough-input" class="conditional">
-          <div class="form-group">
-            <label>Target Trough C<sub>min</sub> (mg/L)</label>
-            <input type="number" id="target_cmin" value="15" min="0" step="0.1" />
-          </div>
-        </div>
-        <div id="dose-input" class="conditional">
-          <div class="form-group">
-            <label>Simulated Dose (mg)</label>
-            <input type="number" id="input_dose" value="1500" min="250" step="250" onchange="autoSuggestInfusion('input_dose', 't_inf_opt')" />
-          </div>
-        </div>
-
-        <button class="btn btn-primary" onclick="optimizeDose()">Simulate Regimen</button>
-      </div>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:20px;">
-      <div class="card">
-        <h3><span class="dot"></span>Optimization Results</h3>
-        <div id="opt-results"><p class="results-empty">Enter parameters and click Simulate.</p></div>
-      </div>
-      <div class="card">
-        <h3><span class="dot"></span>Predicted Steady-State Curve</h3>
-        <div class="chart-wrap"><canvas id="optChart"></canvas></div>
-      </div>
-    </div>
-
-  </div>
-</div>
-</div>
-
-<div id="toast"></div>
-
-<footer>
-  Converted Vancomycin AUC Pharmacokinetic Dosing Tool<br/>
-  Always verify automated calculations with clinical judgment.
-</footer>
-
-<script>
-// ─────────────────────────────────────────────────
-// Utilities
-// ─────────────────────────────────────────────────
-function copyToClipboard(id) {
-  const text = document.getElementById(id).innerText;
-  navigator.clipboard.writeText(text).then(() => toast('✓ Copied to clipboard'));
-}
-
-function toast(msg, dur = 4000) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), dur);
-}
-
-function v(id)  { return parseFloat(document.getElementById(id).value); }
-function sv(id) { return document.getElementById(id).value; }
-
-function linspace(start, end, n = 300) {
-  const arr = [], step = (end - start) / (n - 1);
-  for (let i = 0; i < n; i++) arr.push(start + i * step);
-  return arr;
-}
-
-// ─────────────────────────────────────────────────
-// Clinical Helpers
-// ─────────────────────────────────────────────────
-function getTherapeuticStatus(auc) {
-  if (auc < 400) return { class: 'sub', text: 'SUBTHERAPEUTIC' };
-  if (auc > 600) return { class: 'warning', text: 'SUPRATHERAPEUTIC / TOXICITY RISK' };
-  return { class: 'therapeutic', text: 'THERAPEUTIC' };
-}
-
-function autoSuggestInfusion(doseId, tInfId) {
-  const dose = v(doseId);
-  let t = 1.0;
-  if (dose >= 1250) t = 1.5;
-  if (dose >= 1750) t = 2.0;
-  if (dose >= 2250) t = 2.5;
-  document.getElementById(tInfId).value = t;
-  toast(`Infusion duration updated to ${t} hr based on dose.`);
-}
-
-function generateClinicalSnippet(p, isOpt = false) {
-  let note = `Vancomycin PK Parameters (First-Order Steady State):\n`;
-  if (!isOpt) note += `Patient: Age ${v('age')}, ${sv('sex')}, ${v('wt')}kg, SCr ${v('scr')} mg/dL (Est CrCl: ${p.crcl} mL/min)\n`;
-  note += `k_e: ${p.ke} hr⁻¹ | t_1/2: ${p.thalf} hr\nVd: ${p.vd} L (${p.vdwk} L/kg) | Cl: ${p.clr} L/hr\n\n`;
-  
-  if (isOpt) {
-    note += `RECOMMENDED REGIMEN:\nVancomycin ${p.dose} mg IV q${p.interval}h (infuse over ${p.t_inf} hr)\n`;
-    note += `Predicted C_max: ${p.cmax} mg/L | C_min: ${p.cmin} mg/L\n`;
-    note += `Predicted AUC24: ${p.auc} mg·h/L (MIC=${v('mic')}, AUC/MIC: ${p.auc_mic})\n`;
-  } else {
-    note += `CURRENT REGIMEN (${p.dose} mg q${p.interval}h over ${p.t_inf} hr):\n`;
-    note += `Estimated true C_max: ${p.cmax} mg/L\nEstimated true C_min: ${p.cmin} mg/L\n`;
-    note += `Estimated AUC24: ${p.auc} mg·h/L (MIC=${v('mic')}, AUC/MIC: ${p.auc_mic})\n`;
-    const stat = getTherapeuticStatus(p.auc_mic);
-    note += `Assessment: Exposure appears ${stat.text.toLowerCase()}.\n`;
-  }
-  return note;
-}
-
-// ─────────────────────────────────────────────────
-// State & Navigation
-// ─────────────────────────────────────────────────
-let pkChartInstance  = null;
-let optChartInstance = null;
-let storedPK = {};
-
-function switchTab(tab, btn) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  btn.classList.add('active');
-}
-
-function toggleEq(which) {
-  const btn = document.getElementById('eq-btn-' + which);
-  const panel = document.getElementById('eq-panel-' + which);
-  const lbl = document.getElementById('eq-btn-' + which + '-label');
-  const isOpen = panel.classList.toggle('open');
-  btn.classList.toggle('open', isOpen);
-  lbl.textContent = isOpen ? `Hide ${which === 'pk' ? 'Vancomycin PK' : 'Optimization'} Equations` : `Show ${which === 'pk' ? 'Vancomycin PK' : 'Optimization'} Equations`;
-}
-
-function toggleMethod() {
-  const method = document.querySelector('input[name="method"]:checked').value;
-  document.getElementById('section-ct').classList.toggle('visible', method === 'ct');
-  document.getElementById('section-dt').classList.toggle('visible', method === 'dt');
-}
-
-function toggleCalcMode() {
-  const mode = sv('calc_mode');
-  document.getElementById('auc-input').classList.toggle('visible', mode === 'auc');
-  document.getElementById('trough-input').classList.toggle('visible', mode === 'trough');
-  document.getElementById('dose-input').classList.toggle('visible', mode === 'dose');
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  const today = new Date().toISOString().split('T')[0];
-  ['dose_date','date1','date2'].forEach(id => { document.getElementById(id).value = today; });
-});
-
-// ─────────────────────────────────────────────────
-// Chart Rendering (Vanco customized)
-// ─────────────────────────────────────────────────
-function renderChart(canvasId, old, datasets, xLabel, yLabel, maxTau) {
-  if (old) old.destroy();
-  return new Chart(document.getElementById(canvasId).getContext('2d'), {
-    type: 'line',
-    data: { datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { labels: { font: { family: 'DM Sans', size: 12 }, color: '#475569' } }
-      },
-      scales: {
-        x: {
-          type: 'linear', min: 0, max: maxTau,
-          title: { display: true, text: xLabel, font: { family: 'DM Sans', size: 12 }, color: '#64748b' },
-          grid: { color: '#f1f5f9' },
-          ticks: { font: { family: 'DM Mono', size: 11 }, color: '#64748b' }
-        },
-        y: {
-          title: { display: true, text: yLabel, font: { family: 'DM Sans', size: 12 }, color: '#64748b' },
-          grid: { color: '#f1f5f9' },
-          ticks: { font: { family: 'DM Mono', size: 11 }, color: '#64748b' },
-          beginAtZero: true
+            // UI Reset
+            resultView.classList.add('hidden');
+            questionView.classList.remove('hidden');
+            progressContainer.classList.remove('hidden');
+            
+            renderQuestion();
         }
-      }
-    }
-  });
-}
 
-// ─────────────────────────────────────────────────
-// PK Calculation
-// ─────────────────────────────────────────────────
-function calculatePK() {
-  const method = document.querySelector('input[name="method"]:checked').value;
-  const t_inf = v('t_inf'), tau = v('tau'), dose = v('dose'), mic = v('mic') || 1;
-  const age = v('age'), scr = v('scr'), wt = v('wt'), ht = v('ht'), sex = sv('sex');
+        /**
+         * Render Current Question and Options
+         */
+        function renderQuestion() {
+            // Add slight fade-in effect when rendering a new question
+            questionView.style.animation = 'none';
+            questionView.offsetHeight; /* trigger reflow */
+            questionView.style.animation = 'fadeIn 0.4s ease';
 
-  // Cockcroft Gault & Weights
-  const ibw = sex === 'M' ? 50 + 2.3*(ht - 60) : 45.5 + 2.3*(ht - 60);
-  const adjBw = ibw + 0.4*(wt - ibw);
-  const crcl = (((140 - age) * wt) / (72 * scr)) * (sex === 'F' ? 0.85 : 1);
+            const currentQ = questions[currentQuestionIndex];
+            
+            // Update Text & Progress
+            questionNumberEl.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            questionTextEl.textContent = currentQ.text;
+            progressBar.style.width = `${((currentQuestionIndex) / questions.length) * 100}%`;
 
-  let c1_val, c2_val, t1_val, t2_val;
-  if (method === 'ct') {
-    c1_val = v('c1'); c2_val = v('c2'); t1_val = v('t1'); t2_val = v('t2');
-  } else {
-    const doseDt = new Date(sv('dose_date') + 'T' + sv('dose_time'));
-    const dt1 = new Date(sv('date1') + 'T' + sv('time1'));
-    const dt2 = new Date(sv('date2') + 'T' + sv('time2'));
-    t1_val = (dt1 - doseDt) / 3600000;
-    t2_val = (dt2 - doseDt) / 3600000;
-    c1_val = v('c1_date'); c2_val = v('c2_date');
-  }
+            // Clear previous options
+            optionsContainer.innerHTML = '';
 
-  if (c1_val <= 0 || c2_val <= 0) { toast('⚠ Levels must be > 0'); return; }
-  if (t2_val <= t1_val) { toast('⚠ Level 2 must be drawn after Level 1'); return; }
-  if (t1_val <= t_inf + 0.5) toast('⚠ Warning: First level drawn during or very close to distribution phase.');
+            // Render new option buttons
+            currentQ.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option.text;
+                btn.onclick = () => handleAnswer(option.scores);
+                optionsContainer.appendChild(btn);
+            });
+        }
 
-  // PK Math (1-compartment, steady state)
-  const ke = Math.log(c1_val / c2_val) / (t2_val - t1_val);
-  const t_half = 0.693 / ke;
-  const cmax = c1_val / Math.exp(-ke * (t1_val - t_inf));
-  const cmin = cmax * Math.exp(-ke * (tau - t_inf));
-  const vd = ((dose / t_inf) * (1 - Math.exp(-ke * t_inf))) / (cmax * ke * (1 - Math.exp(-ke * tau)));
-  const clr = vd * ke;
-  const auc24 = (dose / (ke * vd)) * (24 / tau);
-  const auc_mic = auc24 / mic;
+        /**
+         * Handle user selection, update scores, advance quiz
+         */
+        function handleAnswer(scores) {
+            // Apply points to respective profiles
+            for (let profileKey in scores) {
+                if (scoreTracker[profileKey] !== undefined) {
+                    scoreTracker[profileKey] += scores[profileKey];
+                }
+            }
 
-  storedPK = { ke, vd, t_half, t_inf, tau, cmax, cmin, auc24, auc_mic, clr, crcl: crcl.toFixed(1), vdwk: (vd/wt).toFixed(2), dose };
-  const stat = getTherapeuticStatus(auc_mic);
+            currentQuestionIndex++;
 
-  document.getElementById('pk-results').innerHTML = `
-    <div class="results-grid">
-      <div class="result-item">
-        <div class="r-label">k<sub>e</sub> / t<sub>½</sub></div>
-        <div class="r-value">${ke.toFixed(4)} <span style="font-size:0.8rem;color:#64748b;">(${t_half.toFixed(1)}h)</span></div>
-        <div class="r-unit">hr⁻¹</div>
-      </div>
-      <div class="result-item">
-        <div class="r-label">Volume (V<sub>d</sub>) / Est CrCl</div>
-        <div class="r-value">${vd.toFixed(1)} L</div>
-        <div class="r-unit">${(vd/wt).toFixed(2)} L/kg | CrCl: ${crcl.toFixed(0)} mL/min</div>
-      </div>
-      <div class="result-item">
-        <div class="r-label">Estimated Peak (End of infusion)</div>
-        <div class="r-value">${cmax.toFixed(1)}</div>
-        <div class="r-unit">mg/L</div>
-      </div>
-      <div class="result-item">
-        <div class="r-label">Estimated True Trough</div>
-        <div class="r-value">${cmin.toFixed(1)}</div>
-        <div class="r-unit">mg/L</div>
-      </div>
-      <div class="result-item ${stat.class}" style="grid-column:1/-1;">
-        <div class="r-label">Calculated AUC₂₄ / MIC</div>
-        <div class="r-value">${auc_mic.toFixed(0)} <span class="status-badge ${stat.class}">${stat.text}</span></div>
-        <div class="r-unit">Target: 400 - 600 (Assuming MIC ${mic})</div>
-      </div>
-    </div>
-    <div class="snippet-container">
-      <div class="snippet-header">
-        <label>Clinical Documentation Snippet</label>
-        <button class="copy-btn" onclick="copyToClipboard('pk-snippet-text')">Copy</button>
-      </div>
-      <div id="pk-snippet-text" class="snippet-text">${generateClinicalSnippet(storedPK)}</div>
-    </div>`;
+            if (currentQuestionIndex < questions.length) {
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
 
-  // Plotting
-  const t_inf_plot = t_inf, tau_plot = tau;
-  const times = linspace(0, tau_plot, 300);
-  const concs = times.map(t => {
-    if (t <= t_inf_plot) return cmin + ((cmax - cmin) * (t / t_inf_plot)); // rough infusion rise approx
-    return cmax * Math.exp(-ke * (t - t_inf_plot));
-  });
+        /**
+         * Calculate highest score and render Result View
+         */
+        function showResults() {
+            progressBar.style.width = '100%';
+            
+            // Delay slightly for visual finish of progress bar
+            setTimeout(() => {
+                questionView.classList.add('hidden');
+                progressContainer.classList.add('hidden');
+                resultView.classList.remove('hidden');
 
-  pkChartInstance = renderChart('pkChart', pkChartInstance, [
-    {
-      label: 'Predicted SS Curve',
-      data: times.map((t, i) => ({ x: t, y: concs[i] })),
-      borderColor: '#3b82f6', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.1
-    },
-    {
-      label: 'Measured Levels',
-      data: [{ x: t1_val, y: c1_val }, { x: t2_val, y: c2_val }],
-      borderColor: 'transparent', backgroundColor: '#ef4444',
-      pointRadius: 6, pointHoverRadius: 8, showLine: false
-    }
-  ], 'Time (hours post-dose)', 'Vancomycin Concentration (mg/L)', tau_plot);
+                // Determine the highest scoring profile
+                let maxScore = -1;
+                let winningProfileKey = '';
 
-  toast('✓ Vancomycin parameters calculated.');
-}
+                for (let key in scoreTracker) {
+                    if (scoreTracker[key] > maxScore) {
+                        maxScore = scoreTracker[key];
+                        winningProfileKey = key;
+                    }
+                }
 
-// ─────────────────────────────────────────────────
-// Optimization Transfer & Calc
-// ─────────────────────────────────────────────────
-function useInOptimization() {
-  if (!storedPK.ke) { toast('⚠ Calculate PK parameters first.'); return; }
-  document.getElementById('ke_opt').value = storedPK.ke.toFixed(4); 
-  document.getElementById('vd_opt').value = storedPK.vd.toFixed(1);
-  if (storedPK.t_inf) document.getElementById('t_inf_opt').value = storedPK.t_inf;
-  if (storedPK.tau) document.getElementById('interval_opt').value = storedPK.tau;
+                // Populate results UI
+                const winner = profiles[winningProfileKey];
+                resultIcon.textContent = winner.icon;
+                resultTitle.textContent = winner.title;
+                resultDesc.textContent = winner.desc;
+            }, 300);
+        }
 
-  switchTab('opt', document.querySelectorAll('.tab-btn')[1]);
-  toast('✓ PK parameters transferred to Optimization tab.');
-}
+        // Event Listeners
+        restartBtn.addEventListener('click', initQuiz);
 
-function optimizeDose() {
-  const ke = v('ke_opt'), vd = v('vd_opt');
-  const t_inf = v('t_inf_opt'), interval = v('interval_opt');
-  const mode = sv('calc_mode');
-  const mic = v('mic') || 1;
+        // Start Quiz on load
+        initQuiz();
 
-  const calcPeak = (d) => ((d / t_inf) * (1 - Math.exp(-ke * t_inf))) / (vd * ke * (1 - Math.exp(-ke * interval)));
-  const calcTrough = (pk) => pk * Math.exp(-ke * (interval - t_inf));
-  const calcAUC24 = (d) => (d / (ke * vd)) * (24 / interval);
-
-  let recDose, predPeak, predTrough, predAUC24;
-
-  if (mode === 'auc') {
-    const targetAUC = v('target_auc');
-    recDose = targetAUC * ke * vd * (interval / 24);
-    predPeak = calcPeak(recDose);
-    predTrough = calcTrough(predPeak);
-    predAUC24 = targetAUC;
-  } else if (mode === 'trough') {
-    const targetCmin = v('target_cmin');
-    // Calculate required peak to hit trough
-    const reqPeak = targetCmin / Math.exp(-ke * (interval - t_inf));
-    recDose = (reqPeak * vd * ke * t_inf * (1 - Math.exp(-ke * interval))) / (1 - Math.exp(-ke * t_inf));
-    predPeak = reqPeak;
-    predTrough = targetCmin;
-    predAUC24 = calcAUC24(recDose);
-  } else {
-    recDose = v('input_dose');
-    predPeak = calcPeak(recDose);
-    predTrough = calcTrough(predPeak);
-    predAUC24 = calcAUC24(recDose);
-  }
-
-  // Recommendation rounding (to nearest 250mg)
-  const roundedDose = Math.round(recDose / 250) * 250;
-  // Recalculate based on rounded practical dose
-  const actPeak = calcPeak(roundedDose);
-  const actTrough = calcTrough(actPeak);
-  const actAUC = calcAUC24(roundedDose);
-  const actAucMic = actAUC / mic;
-  const stat = getTherapeuticStatus(actAucMic);
-
-  document.getElementById('opt-results').innerHTML = `
-    <div class="results-grid">
-      <div class="result-item highlight" style="grid-column:1/-1;">
-        <div class="r-label">Practical Regimen</div>
-        <div class="r-value" style="font-size:1.3rem;">${roundedDose} mg IV q${interval}h</div>
-        <div class="r-unit">Infused over ${t_inf} hours (Exact calculated dose: ${recDose.toFixed(0)} mg)</div>
-      </div>
-      <div class="result-item">
-        <div class="r-label">Predicted Peak</div>
-        <div class="r-value">${actPeak.toFixed(1)}</div>
-        <div class="r-unit">mg/L</div>
-      </div>
-      <div class="result-item">
-        <div class="r-label">Predicted Trough</div>
-        <div class="r-value">${actTrough.toFixed(1)}</div>
-        <div class="r-unit">mg/L</div>
-      </div>
-      <div class="result-item ${stat.class}" style="grid-column:1/-1;">
-        <div class="r-label">Predicted AUC₂₄ / MIC</div>
-        <div class="r-value">${actAucMic.toFixed(0)} <span class="status-badge ${stat.class}">${stat.text}</span></div>
-        <div class="r-unit">Target: 400 - 600</div>
-      </div>
-    </div>`;
-
-  const optData = {
-    ke: ke.toFixed(4), thalf: (0.693/ke).toFixed(1),
-    vd: vd.toFixed(1), vdwk: (vd/v('wt')).toFixed(2),
-    clr: (ke * vd).toFixed(2), crcl: v('scr') ? (((140-v('age'))*v('wt'))/(72*v('scr'))*(sv('sex')==='F'?0.85:1)).toFixed(0) : 'N/A',
-    dose: roundedDose, interval: interval, t_inf: t_inf,
-    cmax: actPeak.toFixed(1), cmin: actTrough.toFixed(1),
-    auc: actAUC.toFixed(0), auc_mic: actAucMic.toFixed(0)
-  };
-
-  document.getElementById('opt-results').innerHTML += `
-    <div class="snippet-container">
-      <div class="snippet-header">
-        <label>Recommendation Snippet</label>
-        <button class="copy-btn" onclick="copyToClipboard('opt-snippet-text')">Copy</button>
-      </div>
-      <div id="opt-snippet-text" class="snippet-text">${generateClinicalSnippet(optData, true)}</div>
-    </div>`;
-
-  const times = linspace(0, interval, 400);
-  const concs = times.map(t => {
-    if (t <= t_inf) return actTrough + ((actPeak - actTrough) * (t / t_inf));
-    return actPeak * Math.exp(-ke * (t - t_inf));
-  });
-
-  optChartInstance = renderChart('optChart', optChartInstance, [
-    {
-      label: 'Predicted SS Curve',
-      data: times.map((t, i) => ({ x: t, y: concs[i] })),
-      borderColor: '#3b82f6', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.1
-    },
-    {
-      label: `Trough = ${actTrough.toFixed(1)} mg/L`,
-      data: times.map(t => ({ x: t, y: actTrough })),
-      borderColor: '#f59e0b', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, fill: false
-    }
-  ], 'Time (hours post-dose)', 'Vancomycin Concentration (mg/L)', interval);
-}
-</script>
+    </script>
 </body>
 </html>
